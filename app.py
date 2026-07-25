@@ -13,7 +13,8 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 SRC_DIR = PROJECT_ROOT / "src"
 sys.path.insert(0, str(SRC_DIR))
 
-from data_processing import FEATURE_COLUMNS, clean_data, load_dataset  # noqa: E402
+from data_processing import FEATURE_COLUMNS, clean_data, load_dataset, split_features_target  # noqa: E402
+from train_model import build_pipeline  # noqa: E402
 
 
 DATA_PATH = PROJECT_ROOT / "data" / "house_prices.csv"
@@ -52,12 +53,23 @@ def read_csv_if_exists(path: Path) -> pd.DataFrame:
 
 @st.cache_resource
 def get_model():
-    if not MODEL_PATH.exists():
-        return None
-    artifact = joblib.load(MODEL_PATH)
-    if isinstance(artifact, dict) and "pipeline" in artifact:
-        return artifact["pipeline"]
-    return artifact
+    if MODEL_PATH.exists():
+        try:
+            artifact = joblib.load(MODEL_PATH)
+            pipeline = artifact["pipeline"] if isinstance(artifact, dict) and "pipeline" in artifact else artifact
+            sample = load_dataset(DATA_PATH).head(1)
+            pipeline.predict(sample[FEATURE_COLUMNS])
+            return pipeline, "saved model artifact"
+        except Exception as exc:
+            fallback_reason = exc.__class__.__name__
+    else:
+        fallback_reason = "missing saved model artifact"
+
+    training_data = load_dataset(DATA_PATH)
+    x, y = split_features_target(training_data)
+    pipeline = build_pipeline()
+    pipeline.fit(x, y)
+    return pipeline, f"fresh in-memory model ({fallback_reason})"
 
 
 st.title("House Price Prediction")
@@ -69,13 +81,14 @@ if not DATA_PATH.exists():
 
 data = get_dataset()
 metrics = get_metrics()
-model = get_model()
+model, model_source = get_model()
 
 metric_cols = st.columns(4)
 metric_cols[0].metric("Rows", f"{len(data):,}")
 metric_cols[1].metric("Average Price", f"{data['Price'].mean():,.0f}")
 metric_cols[2].metric("RMSE", f"{metrics.get('rmse', 0):,.2f}" if metrics else "Train first")
 metric_cols[3].metric("R-squared", f"{metrics.get('r2', 0):.4f}" if metrics else "Train first")
+st.caption(f"Prediction engine: {model_source}")
 
 tab_overview, tab_model, tab_predict = st.tabs(["Dataset", "Model Output", "Predict Price"])
 
