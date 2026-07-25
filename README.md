@@ -6,6 +6,12 @@ This project predicts house prices using a complete machine learning workflow bu
 
 The project is structured as an interview-ready machine learning project because it demonstrates the full lifecycle of a regression problem: data loading, preprocessing, exploratory outputs, feature engineering, train-test split, model training, evaluation, model saving, coefficient interpretation, and deployment through a simple web dashboard.
 
+## Live Demo
+
+Try the deployed Streamlit dashboard here:
+
+[House Price Prediction Live Demo](https://syntecxapphouse-price-prediction-pfaqedd7tj7yf2xuxwgwf3.streamlit.app/)
+
 ## What Is House Price Prediction
 
 House price prediction is a regression task where a machine learning model estimates the selling price of a house based on input features such as area, number of bedrooms, bathrooms, floors, construction year, location, condition, and garage availability.
